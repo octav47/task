@@ -1,0 +1,147 @@
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <style>
+        body {
+            font: normal 14pt Arial, sans-serif;
+        }
+
+        .ui-autocomplete {
+            font-size: 9pt;
+            max-height: 100px;
+            overflow-y: auto;
+            /* отменим горизонтальный скролл */
+            overflow-x: hidden;
+            /* добавим padding для учета вертикального скролла */
+            padding-right: 20px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 10px;
+        }
+    </style>
+    <!--<script src="./js/autocomplete.js"></script>-->
+    <script>
+        $(function () {
+            var regionID = 0;
+            var districtID = 0;
+
+            var regionSelector = $('#region');
+            var districtSelector = $('#district');
+            var citySelector = $('#city');
+
+            regionSelector.autocomplete({
+                source: function (request, response) {
+                    $.get('./json/region.json', function (data) {
+                        response($.map(data.regions, function (item) {
+                            if (item.name.toLowerCase().indexOf(request.term.toLowerCase()) > -1) {
+                                return {
+                                    label: item.name,
+                                    value: item.name,
+                                    id: item.id
+                                }
+                            }
+                        }));
+                    });
+                },
+                minLength: 4,
+                select: function (event, ui) {
+                    regionID = ui.item.id;
+                    $('#district').prop('disabled', !regionID);
+//                    console.log(regionID);
+                },
+                response: function (event, ui) {
+                    if (ui.content.length == 1) {
+                        if (ui.content[0].label.toLowerCase() == regionSelector.val().toLowerCase()) {
+                            regionID = ui.content[0].id;
+                            $('#district').prop('disabled', !regionID);
+                        }
+                    }
+                }
+            });
+
+            regionSelector.on('input', function () {
+                districtSelector.prop('disabled', true);
+                districtSelector.val('');
+                districtID = 0;
+                citySelector.prop('disabled', true);
+                citySelector.val('');
+            });
+
+            districtSelector.autocomplete({
+                source: function (request, response) {
+                    $.get('./json/district.json', function (data) {
+                        if (data[regionID] !== undefined) {
+                            response($.map(data[regionID], function (item) {
+                                if (item.name.toLowerCase().indexOf(request.term.toLowerCase()) > -1) {
+                                    return {
+                                        label: item.name,
+                                        value: item.name,
+                                        id: item.id
+                                    }
+                                }
+                            }));
+                        }
+                    });
+                },
+                minLength: 4,
+                select: function (event, ui) {
+                    districtID = ui.item.id;
+                    $('#city').prop('disabled', !districtID);
+                    console.log(districtID);
+                },
+                response: function (event, ui) {
+                    if (ui.content.length == 1) {
+                        if (ui.content[0].label.toLowerCase() == districtSelector.val().toLowerCase()) {
+                            districtID = ui.content[0].id;
+                            $('#city').prop('disabled', !districtID);
+                        }
+                    }
+                }
+            });
+
+            districtSelector.on('input', function () {
+                citySelector.prop('disabled', true);
+                citySelector.val('');
+            });
+
+            citySelector.autocomplete({
+                source: function (request, response) {
+                    $.get('./json/city.json', function (data) {
+                        if (data[districtID] !== undefined) {
+                            response($.map(data[districtID], function (item) {
+                                if (item.name.toLowerCase().indexOf(request.term.toLowerCase()) > -1) {
+                                    return {
+                                        label: item.name,
+                                        value: item.name,
+                                        id: item.id
+                                    }
+                                }
+                            }));
+                        }
+                    });
+                },
+                minLength: 4
+            });
+        });
+    </script>
+</head>
+<body>
+Регион:
+<br>
+<input id="region" type="text">
+<br>
+Район:
+<br>
+<input id="district" type="text" disabled>
+<br>
+Населённый пункт:
+<br>
+<input id="city" type="text" disabled>
+</body>
+</html>
